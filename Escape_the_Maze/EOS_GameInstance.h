@@ -49,9 +49,9 @@ public:
 
     
     
-    	//UFUNCTION(BlueprintCallable, Category="EOS Functions")
+    	UFUNCTION(BlueprintCallable, Category="EOS Functions")
     
-    	//void FindSessionAndJoin();
+    	void FindSessionAndJoin();
     
     	//UFUNCTION(BlueprintCallable, Category="EOS Functions")
     
@@ -80,9 +80,10 @@ public:
     	void OnDestroyCreateComplete(FName Session, bool bWasSession);
     
     
-    	//void OnFindSessionCompleted(bool bWasSucces);
+    	void OnFindSessionCompleted(bool bWasSucces);
     
-    	//void OnJoinSessionCompleted(FName SessionName, EOnJoinSessionCompleteResult :: Type Result);
+    	
+	void OnJoinSessionCompleted(FName SessionName, EOnJoinSessionCompleteResult :: Type Result);
     	
 	
 };

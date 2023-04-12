@@ -5,8 +5,9 @@
 #include "OnlineSubsystemUtils.h"
 #include "OnlineSubsystem.h"
 #include "Interfaces/OnlineIdentityInterface.h"
+#include "Kismet/GameplayStatics.h"
 
-void UEOS_GameInstance::LoginWithEOS(FString ID, FString Token, FString LoginType)
+	void UEOS_GameInstance::LoginWithEOS(FString ID, FString Token, FString LoginType)
 {
 
 	IOnlineSubsystem *SubsystemRef = Online::GetSubsystem(this->GetWorld());
@@ -138,6 +139,8 @@ return  FString();
 	
 	}
 
+	
+
 	void UEOS_GameInstance::DestroySession()
 	
 	{
@@ -159,4 +162,86 @@ return  FString();
 	
 	}
 
+//OnFindSessionCompleted
 
+	void UEOS_GameInstance::OnFindSessionCompleted(bool bWasSucces)
+	{
+if(bWasSucces)
+{
+	IOnlineSubsystem *SubsystemRef = Online::GetSubsystem(this->GetWorld());
+	if(SubsystemRef)
+	{
+		IOnlineSessionPtr SessionPtrRef = SubsystemRef->GetSessionInterface();
+
+		if(SessionPtrRef)
+		{
+			if(SessionSearch->SearchResults.Num()>0)
+			{
+				SessionPtrRef->OnJoinSessionCompleteDelegates.AddUObject(this,&UEOS_GameInstance::OnJoinSessionCompleted);
+				SessionPtrRef->JoinSession(0,FName("MainSession"),SessionSearch->SearchResults[0]);
+			}
+			else
+			{
+				CreateEOSSession(false,false,	10);
+			}
+		}
+		
+		}
+}
+else
+{
+	CreateEOSSession(false,false,	10);
+}
+	
+	}
+
+	
+
+	//FindSessionAndJoin
+	void UEOS_GameInstance::FindSessionAndJoin()
+{
+	IOnlineSubsystem *SubsystemRef = Online::GetSubsystem(this->GetWorld());
+	if(SubsystemRef)
+	{
+		IOnlineSessionPtr SessionPtrRef = SubsystemRef->GetSessionInterface();
+
+		if(SessionPtrRef)
+		{
+			SessionSearch = MakeShareable(new FOnlineSessionSearch);
+			SessionSearch->bIsLanQuery = false;
+			SessionSearch->QuerySettings.SearchParams.Empty();
+			SessionSearch->MaxSearchResults=20;
+			SessionPtrRef->OnFindSessionsCompleteDelegates.AddUObject(this, &UEOS_GameInstance::OnFindSessionCompleted);
+			SessionPtrRef->FindSessions(0,SessionSearch.ToSharedRef());
+		}
+	}
+	}
+
+void UEOS_GameInstance::OnJoinSessionCompleted(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
+{
+	if(Result==EOnJoinSessionCompleteResult::Success)
+	{
+		if(APlayerController* PlayerControllerRef = UGameplayStatics::GetPlayerController(GetWorld(),0))
+		{
+			FString JoinAddress;
+			IOnlineSubsystem *SubsystemRef = Online::GetSubsystem(this->GetWorld());
+			if(SubsystemRef)
+			{
+				IOnlineSessionPtr SessionPtrRef = SubsystemRef->GetSessionInterface();
+
+				if(SessionPtrRef)
+				{
+					SessionPtrRef->GetResolvedConnectString(FName("MainSession"),JoinAddress);
+
+					UE_LOG(LogTemp,Warning,TEXT("Join Address is %s"),*JoinAddress);
+					if(!JoinAddress.IsEmpty())
+					{
+					PlayerControllerRef->ClientTravel(JoinAddress,ETravelType::TRAVEL_Absolute);
+					}
+				}
+			}
+		}
+	}
+
+	
+}
